@@ -1,0 +1,30 @@
+{
+  "name": "workers",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/speech": "^6.5.0",
+    "@langchain/openai": "^0.0.28",
+    "@langchain/pinecone": "^0.0.4",
+    "@pinecone-database/pinecone": "^2.2.0",
+    "axios": "^1.6.8",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.4.5",
+    "ioredis": "^5.4.1",
+    "langchain": "^0.1.36",
+    "openai": "^4.44.0",
+    "pdf-parse": "^1.1.1",
+    "redis": "^4.6.13",
+    "textract": "^2.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.11"
+  }
+}
