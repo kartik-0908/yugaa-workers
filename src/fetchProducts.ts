@@ -71,7 +71,7 @@ export async function fetchProducts(shop: string, accessToken: string) {
                     {
                         id: String(id),
                         values: embedding,
-                        metadata: { data: details }
+                        metadata: { text: details }
                     },
                 ]);
         }

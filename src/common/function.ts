@@ -80,7 +80,7 @@ export async function createandInsertEmbeddings(chunks: string[], indexName: str
                     id: `${docName}-${i}`,
                     values: embedding,
                     metadata: {
-                        data: chunk,
+                        text: chunk,
                     },
                 },
             ],
