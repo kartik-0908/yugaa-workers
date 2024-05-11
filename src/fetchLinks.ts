@@ -2,8 +2,6 @@ import axios from "axios";
 import { chunkDocument, createandInsertEmbeddings, extractIndexName } from "./common/function";
 require('dotenv').config();
 import "cheerio";
-import { CheerioWebBaseLoader } from "langchain/document_loaders/web/cheerio";
-import { RecursiveCharacterTextSplitter } from "langchain/dist/text_splitter";
 
 //id:0 - faq
 //id:1 - terms
