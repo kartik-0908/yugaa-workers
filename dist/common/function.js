@@ -89,7 +89,7 @@ function createandInsertEmbeddings(chunks, indexName, docName) {
                     id: `${docName}-${i}`,
                     values: embedding,
                     metadata: {
-                        text: chunk,
+                        data: chunk,
                     },
                 },
             ]);
