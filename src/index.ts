@@ -16,7 +16,7 @@ async function startWorker() {
         console.log(process.env.REDIS_URL);
 
         // Main loop
-        const queues = ['fetch-shopify', 'fetch-links','fetch-docs','fetch-video'];
+        const queues = ['fetch-shopify', 'fetch-links','fetch-docs','fetch-video','create-conv','create-mssg','product-update'];
         console.log(`Waiting for messages in queues: ${queues.join(', ')}...`);
 
         while (true) {
@@ -47,6 +47,22 @@ async function startWorker() {
                     const {url} = data;
                     const text = await getVideoTranscript(url)
                     console.log(text)
+                }
+                else if(queue === 'product-update'){
+                    const {id} = data;
+                    const {shopDomain} = data;
+                    const {type} = data;
+                }
+                else if(queue === 'create-conv'){
+                    const {id} = data;
+                    const {shopDomain} = data;
+                    const {timestamp} = data;
+                }
+                else if(queue === 'create-mssg'){
+                    const {convId} = data;
+                    const {sender} = data;
+                    const {text} = data;
+                    const {timestamp} = data;
                 }
             }
             else {

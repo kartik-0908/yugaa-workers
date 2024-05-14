@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ChatbotCustomization {
+  selectedColor          String
+  botName                String
+  greetingMessage        String
+  fontFamily             String
+  fontColor              String
+  widgetPosition         String
+  toneAndStyle           String
+  userGuidance           String
+  positiveReinforcement  String
+  errorHandling          String
+  politeness             String
+  clarityAndSimplicity   String
+  personalization        String
+  responseLength         String
+  clarificationPrompt    String
+  apologyAndRetryAttempt String
+  errorMessageStyle      String
+  logo                   String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime
+  userEmail              String   @id
+  logoFilename           String   @default("defalut")
+  User                   User     @relation(fields: [userEmail], references: [email])
+}
+
+model Conversation {
+  id            String    @id
+  shopDomain    String
+  startedAt     DateTime  @default(now())
+  customerEmail String?
+  Message       Message[]
+
+  @@index([shopDomain])
+}
+
+model Customer {
+  id         Int     @id @default(autoincrement())
+  shopDomain String
+  firstName  String
+  lastName   String
+  email      String
+  deleted    Boolean @default(false)
+
+  @@unique([shopDomain, email])
+}
+
+model KnowledgeBase {
+  shopDomain            String   @id
+  faqUrl                String?
+  termsAndConditionsUrl String?
+  helpUrl               String?
+  videoLinkUrls         String[]
+  documents             Json[]
+}
+
+model Message {
+  id             String       @id
+  conversationId String
+  timestamp      DateTime     @default(now())
+  senderId       Int
+  text           String
+  senderType     String
+  unanswered     Boolean      @default(false)
+  Conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  @@index([conversationId])
+}
+
+model PlanDetails {
+  shopifyDomain  String   @id
+  planId         Int
+  planStartDate  DateTime
+  convleft       Int
+  shopifyid      String   @default("nothing")
+  eventTimestamp String   @default("dfualt")
+}
+
+model RegisteredWebhooks {
+  id         String @id
+  address    String
+  topic      String
+  created_at String
+  updated_at String
+  shopDomain String
+}
+
+model User {
+  id                   Int                   @id @default(autoincrement())
+  email                String                @unique
+  lastLoginAt          DateTime?
+  password             String
+  shopifyDomain        String                @unique
+  ChatbotCustomization ChatbotCustomization?
+}
+
+model feature_request {
+  id          Int    @id @default(autoincrement())
+  shop        String
+  description String
+  details     String
+  category    String
+}
+
+model shopify_installed_shop {
+  id          Int    @id @default(autoincrement())
+  shop        String @unique
+  accessToken String
+}

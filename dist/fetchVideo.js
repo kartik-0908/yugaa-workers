@@ -19,14 +19,14 @@ const google_auth_library_1 = require("google-auth-library");
 function getVideoTranscript(videoUrl) {
     return __awaiter(this, void 0, void 0, function* () {
         const auth = new google_auth_library_1.GoogleAuth({
-            keyFilename: '/home/kartik/yugaa/workers/yugaa-422606-2d91539663c1.json',
+            keyFilename: '/home/kartik/yugaa/workers/yugaa-422606-2d91539663c1.json', // Update the path to your service account JSON file
             scopes: ['https://www.googleapis.com/auth/cloud-platform']
         });
         const client = yield auth.getClient();
         const endpoint = `https://speech.googleapis.com/v1/speech:recognize`;
         const requestPayload = {
             config: {
-                languageCode: 'en-US',
+                languageCode: 'en-US', // Change this based on your video language
                 enableAutomaticPunctuation: true
             },
             audio: {

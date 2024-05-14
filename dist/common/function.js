@@ -12,9 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createandInsertEmbeddings = exports.createEmbedding = exports.chunkDocument = exports.PineconeIndexcreate = exports.extractIndexName = void 0;
+exports.createMssg = exports.createConv = exports.updateProduct = exports.createandInsertEmbeddings = exports.createEmbedding = exports.chunkDocument = exports.PineconeIndexcreate = exports.extractIndexName = void 0;
 const openai_1 = __importDefault(require("../lib/openai"));
 const pinecone_1 = __importDefault(require("../lib/pinecone"));
+const prisma_1 = require("../lib/prisma");
 function extractIndexName(shop) {
     const indexName = shop.replace(/\./g, '-');
     return indexName;
@@ -89,7 +90,7 @@ function createandInsertEmbeddings(chunks, indexName, docName) {
                     id: `${docName}-${i}`,
                     values: embedding,
                     metadata: {
-                        data: chunk,
+                        text: chunk,
                     },
                 },
             ]);
@@ -97,3 +98,47 @@ function createandInsertEmbeddings(chunks, indexName, docName) {
     });
 }
 exports.createandInsertEmbeddings = createandInsertEmbeddings;
+function updateProduct(id, shop, type) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (type === "delete") {
+        }
+    });
+}
+exports.updateProduct = updateProduct;
+function createConv(shop, id, time) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let conversation = yield prisma_1.client.conversation.findUnique({
+            where: { id: id }
+        });
+        if (!conversation) {
+            conversation = yield prisma_1.client.conversation.create({
+                data: {
+                    id: id,
+                    shopDomain: shop,
+                    startedAt: new Date(time) // Assuming 'timestamp' is when the conversation started
+                }
+            });
+        }
+    });
+}
+exports.createConv = createConv;
+function generateUniqueId() {
+    const timestamp = Date.now().toString(36); // Get the current timestamp and convert it to base36
+    const randomStr = Math.random().toString(36).substring(2, 7); // Generate a random string
+    return `${timestamp}-${randomStr}`;
+}
+function createMssg(convId, timestamp, sender, text) {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield prisma_1.client.message.create({
+            data: {
+                id: generateUniqueId(),
+                conversationId: convId,
+                timestamp: new Date(timestamp),
+                senderId: 45454, // You didn't specify how to determine senderId
+                text: text,
+                senderType: "user",
+            }
+        });
+    });
+}
+exports.createMssg = createMssg;
