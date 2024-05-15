@@ -1,3 +1,4 @@
+import { createConv, createMssg, updateProduct } from "./common/function";
 import { fetchDocs } from "./fetchDocs";
 import { fetchLinks } from "./fetchLinks";
 import { fetchProducts } from "./fetchProducts";
@@ -52,17 +53,20 @@ async function startWorker() {
                     const {id} = data;
                     const {shopDomain} = data;
                     const {type} = data;
+                    await updateProduct(id,shopDomain,type)
                 }
                 else if(queue === 'create-conv'){
                     const {id} = data;
                     const {shopDomain} = data;
                     const {timestamp} = data;
+                    await createConv(shopDomain, id, timestamp)
                 }
                 else if(queue === 'create-mssg'){
                     const {convId} = data;
                     const {sender} = data;
                     const {text} = data;
                     const {timestamp} = data;
+                    await createMssg(convId, timestamp, sender, text)
                 }
             }
             else {
