@@ -97,17 +97,21 @@ export async function updateProduct(id: number, shop: string, type: string) {
     }
 }
 
-export async function createConv(shop: string, id: string, time: string) {
+export async function createConv(shop: string, id: string, time: Date) {
     try {
         let conversation = await client.conversation.findUnique({
             where: { id: id }
         });
         if (!conversation) {
+            // const date = new Date(time);
+            // if (isNaN(date.getTime())) {
+            //     throw new Error(`Invalid date format: ${time}`);
+            // }
             conversation = await client.conversation.create({
                 data: {
                     id: id,
                     shopDomain: shop,
-                    startedAt: new Date(time) // Assuming 'timestamp' is when the conversation started
+                    startedAt: time // Assuming 'timestamp' is when the conversation started
                 }
             });
         }

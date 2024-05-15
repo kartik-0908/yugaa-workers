@@ -57,9 +57,9 @@ async function startWorker() {
                 }
                 else if(queue === 'create-conv'){
                     const {id} = data;
-                    const {shopDomain} = data;
-                    const {timestamp} = data;
-                    await createConv(shopDomain, id, timestamp)
+                    const {shop} = data;
+                    const {time} = data;
+                    await createConv(shop, id, time)
                 }
                 else if(queue === 'create-mssg'){
                     const {convId} = data;
