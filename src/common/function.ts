@@ -239,7 +239,7 @@ export async function productUpdate(id: string, shop: string) {
             }
         ])
     } catch (e) {
-        console.log(error)
+        console.log(e)
     }
 
 }
