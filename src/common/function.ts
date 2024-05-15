@@ -3,6 +3,7 @@ import openai from "../lib/openai";
 import pc from "../lib/pinecone";
 import { client } from "../lib/prisma";
 import { error } from "console";
+import { val } from "cheerio/lib/api/attributes";
 
 export function extractIndexName(shop: string) {
     const indexName = shop.replace(/\./g, '-');
@@ -209,24 +210,38 @@ function extactMetaFields(data: any) {
 export async function productUpdate(id: string, shop: string) {
     try {
         const token = await getToken(shop)
+        console.log(token)
         const resp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}.json`, {
             headers: {
                 'X-Shopify-Access-Token': token
             }
         })
         const { product } = resp.data;
-        const details = extractProductData(product);
-        const metaresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafield.json`, {
+        let details = extractProductData(product);
+        const countresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields/count.json`, {
             headers: {
                 'X-Shopify-Access-Token': token
             }
         })
-        const data = extactMetaFields(metaresp.data)
+        const { count } = countresp.data
+        console.log(count)
         let metadata: { [key: string]: any } = {};
+        if (count > 0) {
+            const metaresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields.json`, {
+                headers: {
+                    'X-Shopify-Access-Token': token
+                }
+            })
+            const data = extactMetaFields(metaresp.data)
+            data.map(([key, value]) => {
+                metadata[key] = value;
+                details+=(`${key} : ${value}`)
+
+            })
+
+        }
         metadata["text"] = details;
-        data.map(([key, value]) => {
-            metadata[key] = value;
-        })
+
 
         const indexName = extractIndexName(shop);
         const index = pc.index(indexName)
