@@ -166,7 +166,6 @@ async function getToken(shop: string) {
 function extractProductData(product: any) {
 
     const {
-        id,
         title,
         body_html,
         product_type,
@@ -207,7 +206,7 @@ function extactMetaFields(data: any) {
     }
     return keyValuePair;
 }
-export async function productUpdate(id: number, shop: string) {
+export async function productUpdate(id: string, shop: string) {
     try {
         const token = await getToken(shop)
         const resp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}.json`, {

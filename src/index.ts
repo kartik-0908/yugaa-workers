@@ -1,4 +1,4 @@
-import { createConv, createMssg, updateProduct } from "./common/function";
+import { createConv, createMssg, productUpdate, updateProduct } from "./common/function";
 import { fetchDocs } from "./fetchDocs";
 import { fetchLinks } from "./fetchLinks";
 import { fetchProducts } from "./fetchProducts";
@@ -53,7 +53,7 @@ async function startWorker() {
                     const {id} = data;
                     const {shopDomain} = data;
                     const {type} = data;
-                    await updateProduct(id,shopDomain,type)
+                    await productUpdate(id,shopDomain)
                 }
                 else if(queue === 'create-conv'){
                     const {id} = data;
