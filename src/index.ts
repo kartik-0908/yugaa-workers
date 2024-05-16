@@ -1,4 +1,5 @@
-import { createConv, createMssg, productUpdate, updateProduct } from "./common/function";
+import { subscribe } from "diagnostics_channel";
+import { createConv, createMssg, productUpdate, subscribeWebhook, updateProduct } from "./common/function";
 import { fetchDocs } from "./fetchDocs";
 import { fetchLinks } from "./fetchLinks";
 import { fetchProducts } from "./fetchProducts";
@@ -17,7 +18,16 @@ async function startWorker() {
         console.log(process.env.REDIS_URL);
 
         // Main loop
-        const queues = ['fetch-shopify', 'fetch-links','fetch-docs','fetch-video','create-conv','create-mssg','product-update'];
+        const queues = [
+        'fetch-shopify', 
+        'fetch-links',
+        'fetch-docs',
+        'fetch-video',
+        'create-conv',
+        'create-mssg',
+        'product-update',
+        'subs-webhook'
+    ];
         console.log(`Waiting for messages in queues: ${queues.join(', ')}...`);
 
         while (true) {
@@ -67,6 +77,11 @@ async function startWorker() {
                     const {text} = data;
                     const {timestamp} = data;
                     await createMssg(convId, timestamp, sender, text)
+                }
+                else if(queue === 'subs-webhook'){
+                    const {shop} = data;
+                    const {accessToken} = data;
+                    await subscribeWebhook(shop, accessToken)
                 }
             }
             else {

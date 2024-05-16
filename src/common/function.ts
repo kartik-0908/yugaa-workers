@@ -235,7 +235,7 @@ export async function productUpdate(id: string, shop: string) {
             const data = extactMetaFields(metaresp.data)
             data.map(([key, value]) => {
                 metadata[key] = value;
-                details+=(`${key} : ${value}`)
+                details += (`${key} : ${value}`)
 
             })
 
@@ -258,3 +258,95 @@ export async function productUpdate(id: string, shop: string) {
     }
 
 }
+
+const webhookurl = "https://api.yugaa.tech/webhooks/"
+
+export async function subscribeWebhook(shop: string, accessToken: string) {
+    const webhooks = [
+        {
+            address: `${webhookurl}app/uninstalled`,
+            topic: 'app/uninstalled',
+            format: 'json',
+        },
+        {
+            address: `${webhookurl}app_subscriptions/update`,
+            topic: 'app_subscriptions/update',
+            format: 'json',
+        },
+        {
+            address: `${webhookurl}products/create`,
+            topic: 'products/create',
+            format: 'json',
+        },
+        {
+            address: `${webhookurl}products/delete`,
+            topic: 'products/delete',
+            format: 'json',
+        },
+        {
+            address: `${webhookurl}products/update`,
+            topic: 'products/update',
+            format: 'json',
+        },
+    ];
+    for (const webhookData of webhooks) {
+        try {
+            await createWebhook(shop, accessToken, webhookData);
+            await delay(1000); // Delay for 1 second (1000 milliseconds)
+        } catch (error) {
+            console.error('Error creating webhook:', error);
+        }
+    }
+
+
+}
+
+
+async function createWebhook(shop: any, accessToken: any, webhookData: any) {
+    try {
+        const response = await axios.post(
+            `https://${shop}/admin/api/2024-01/webhooks.json`,
+            { webhook: webhookData },
+            {
+                headers: {
+                    'X-Shopify-Access-Token': accessToken,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        console.log('Webhook created:', response.data);
+        await saveWebhookDetails(response.data, shop)
+        // Handle the successful webhook creation
+    } catch (error) {
+        console.error('Error creating webhook:');
+        // Handle the error
+    }
+}
+
+function delay(ms: any) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function saveWebhookDetails(webhookResponse: any, shopDomain: any) {
+    try {
+        const webhook = webhookResponse.webhook;
+        console.log(webhook)
+
+        const createdWebhook = await client.registeredWebhooks.create({
+            data: {
+                id: String(webhook.id),
+                address: webhook.address,
+                topic: webhook.topic,
+                created_at: webhook.created_at,
+                updated_at: webhook.updated_at,
+                shopDomain: shopDomain,
+            },
+        });
+        console.log('Webhook details saved:', createdWebhook);
+    } catch (error) {
+        console.error('Error saving webhook details:', error);
+        // throw error;
+    }
+}
+
