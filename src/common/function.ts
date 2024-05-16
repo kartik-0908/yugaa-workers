@@ -207,52 +207,62 @@ function extactMetaFields(data: any) {
     }
     return keyValuePair;
 }
-export async function productUpdate(id: string, shop: string) {
+export async function productUpdate(id: string, shop: string, type: string) {
+
     try {
-        const token = await getToken(shop)
-        console.log(token)
-        const resp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}.json`, {
-            headers: {
-                'X-Shopify-Access-Token': token
-            }
-        })
-        const { product } = resp.data;
-        let details = extractProductData(product);
-        const countresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields/count.json`, {
-            headers: {
-                'X-Shopify-Access-Token': token
-            }
-        })
-        const { count } = countresp.data
-        console.log(count)
-        let metadata: { [key: string]: any } = {};
-        if (count > 0) {
-            const metaresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields.json`, {
+        const indexName = extractIndexName(shop);
+        const index = pc.index(indexName)
+        if (type === "delete") {
+            await index._deleteOne(id)
+            console.log(`id ${id} deleted successfull`)
+        }
+        else {
+            const token = await getToken(shop)
+            console.log(token)
+            const resp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}.json`, {
                 headers: {
                     'X-Shopify-Access-Token': token
                 }
             })
-            const data = extactMetaFields(metaresp.data)
-            data.map(([key, value]) => {
-                metadata[key] = value;
-                details += (`${key} : ${value}`)
-
+            const { product } = resp.data;
+            let details = extractProductData(product);
+            const countresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields/count.json`, {
+                headers: {
+                    'X-Shopify-Access-Token': token
+                }
             })
+            const { count } = countresp.data
+            console.log(count)
+            let metadata: { [key: string]: any } = {};
+            if (count > 0) {
+                const metaresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields.json`, {
+                    headers: {
+                        'X-Shopify-Access-Token': token
+                    }
+                })
+                const data = extactMetaFields(metaresp.data)
+                data.map(([key, value]) => {
+                    metadata[key] = value;
+                    details += (`${key} : ${value}`)
+
+                })
+
+            }
+            metadata["text"] = details;
+
+
+
+            const vector = await createEmbedding(details);
+            await index.upsert([
+                {
+                    "id": String(id),
+                    "values": vector,
+                    "metadata": metadata
+                }
+            ])
 
         }
-        metadata["text"] = details;
 
-
-        const indexName = extractIndexName(shop);
-        const index = pc.index(indexName)
-        const vector = await createEmbedding(details);
-        await index.upsert([
-            {
-                "id": String(id),
-                "values": vector,
-                "metadata": metadata
-            }
-        ])
     } catch (e) {
         console.log(e)
     }
@@ -350,3 +360,31 @@ export async function saveWebhookDetails(webhookResponse: any, shopDomain: any) 
     }
 }
 
+export async function deleteRecordsWithPrefix(indexName: string, prefix: string) {
+    try {
+        const index = pc.index(indexName);
+        let paginationToken: string | undefined = undefined;
+        let pageList = await index.listPaginated({ prefix });
+        let vectorIds = pageList?.vectors?.map((vector) => vector.id);
+        if (!vectorIds || !vectorIds.length) {
+            return;
+        }
+        if (vectorIds?.length > 0) {
+            await index.deleteMany(vectorIds);
+        }
+        paginationToken = pageList.pagination?.next;
+        while (paginationToken) {
+            pageList = await index.listPaginated({ prefix, paginationToken });
+            vectorIds = pageList?.vectors?.map((vector) => vector.id);
+            if (!vectorIds || !vectorIds.length) {
+                return;
+            }
+            if (vectorIds.length > 0) {
+                await index.deleteMany(vectorIds);
+            }
+            paginationToken = pageList.pagination?.next;
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}

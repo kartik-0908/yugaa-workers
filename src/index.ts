@@ -45,13 +45,15 @@ async function startWorker() {
                     const {id} = data;
                     const {shop} = data;
                     const {url} = data;
-                    await fetchLinks(id,shop,url)
+                    const {type} = data;
+                    await fetchLinks(id,shop,url,type)
                 }
                 else if(queue === 'fetch-docs'){
                     const {fileName} = data;
                     const {shop} = data;
                     const {publicUrl} = data;
-                    await fetchDocs(fileName,publicUrl,shop)
+                    const {type} = data;
+                    await fetchDocs(fileName,publicUrl,shop, type)
                 }
                 else if(queue === 'fetch-video'){
                     const {shop} = data;
@@ -63,7 +65,7 @@ async function startWorker() {
                     const {id} = data;
                     const {shopDomain} = data;
                     const {type} = data;
-                    await productUpdate(id,shopDomain)
+                    await productUpdate(id,shopDomain,type)
                 }
                 else if(queue === 'create-conv'){
                     const {id} = data;
