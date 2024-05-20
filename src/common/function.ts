@@ -183,7 +183,7 @@ function extractProductData(product: any) {
           Variants: ${variants
             .map(
                 (variant: any) =>
-                    `ID: ${variant.id}, Title: ${variant.title}, Price: ${variant.price}, SKU: ${variant.sku}, Inventory Quantity: ${variant.inventory_quantity}`
+                    `ID: ${variant.id}, Title: ${variant.title}, Price: ${variant.price}, SKU: ${variant.sku}, Inventory Quantity: ${variant.inventory_quantity > 0 ? 'Available' : 'Not Available'}`
             )
             .join('; ')}
           Options: ${options
@@ -194,7 +194,7 @@ function extractProductData(product: any) {
             : 'No Image'
         }`;
 
-    return productString;
+    return {productString, title,body_html,product_type,tags,variants,options,image};
 }
 function extactMetaFields(data: any) {
     const { metafields } = data;
@@ -225,7 +225,7 @@ export async function productUpdate(id: string, shop: string, type: string) {
                 }
             })
             const { product } = resp.data;
-            let details = extractProductData(product);
+            let {productString, title,body_html,product_type,tags,variants,options,image} = extractProductData(product);
             const countresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields/count.json`, {
                 headers: {
                     'X-Shopify-Access-Token': token
@@ -234,6 +234,13 @@ export async function productUpdate(id: string, shop: string, type: string) {
             const { count } = countresp.data
             console.log(count)
             let metadata: { [key: string]: any } = {};
+            metadata["title"] = title
+            metadata["body_html"] = body_html
+            metadata["product_type"] = product_type
+            metadata["tags"] = tags
+            metadata["variants"] = variants
+            metadata["options"] = options
+            metadata["image"] = image
             if (count > 0) {
                 const metaresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields.json`, {
                     headers: {
@@ -243,16 +250,16 @@ export async function productUpdate(id: string, shop: string, type: string) {
                 const data = extactMetaFields(metaresp.data)
                 data.map(([key, value]) => {
                     metadata[key] = value;
-                    details += (`${key} : ${value}`)
+                    productString += (`${key} : ${value}`)
 
                 })
 
             }
-            metadata["text"] = details;
+            metadata["text"] = productString;
 
 
 
-            const vector = await createEmbedding(details);
+            const vector = await createEmbedding(productString);
             await index.upsert([
                 {
                     "id": String(id),
