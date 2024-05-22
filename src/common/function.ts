@@ -98,19 +98,75 @@ export async function updateProduct(id: number, shop: string, type: string) {
     }
 }
 
-export async function createConv(shop: string, id: string, time: Date) {
+export async function updateTicket(ticketId: string, conversationId: string, shopDomain: string, time: Date) {
+    try {
+        const existingTicket = await client.ticket.findUnique({
+            where: {
+                id: ticketId,
+            },
+            include: {
+                TicketConversation: {
+                    where: {
+                        conversationId: conversationId,
+                    },
+                },
+            },
+        });
+
+        if (existingTicket) {
+            // Check if the conversation is already linked to the ticket
+            const isConversationLinked = existingTicket.TicketConversation.some(tc => tc.conversationId === conversationId);
+
+            if (!isConversationLinked) {
+                // If the conversation is not linked, create the link
+                await client.ticketConversation.create({
+                    data: {
+                        ticketId: ticketId,
+                        conversationId: conversationId,
+                        shopDomain: shopDomain,
+                        createdAt: time,
+                        updatedAt: time,
+                    },
+                });
+                console.log('Conversation linked to existing ticket');
+            } else {
+                console.log('Conversation is already linked to this ticket');
+            }
+        } else {
+            // If the ticket does not exist, create a new ticket and link the conversation
+            await client.ticket.create({
+                data: {
+                    id: ticketId,
+                    shopDomain: shopDomain,
+                    createdAt: time,
+                    updatedAt: time,
+                    TicketConversation: {
+                        create: {
+                            conversationId: conversationId,
+                            shopDomain: shopDomain,
+                            createdAt: time,
+                            updatedAt: time,
+                        },
+                    },
+                },
+            });
+            console.log('New ticket created and conversation linked');
+        }
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export async function createConv(shop: string, convId: string, time: Date) {
     try {
         let conversation = await client.conversation.findUnique({
-            where: { id: id }
+            where: { id: convId }
         });
         if (!conversation) {
-            // const date = new Date(time);
-            // if (isNaN(date.getTime())) {
-            //     throw new Error(`Invalid date format: ${time}`);
-            // }
             conversation = await client.conversation.create({
                 data: {
-                    id: id,
+                    id: convId,
                     shopDomain: shop,
                     startedAt: time // Assuming 'timestamp' is when the conversation started
                 }
@@ -194,7 +250,7 @@ function extractProductData(product: any) {
             : 'No Image'
         }`;
 
-    return {productString, title,body_html,product_type,tags,variants,options,image};
+    return { productString, title, body_html, product_type, tags, variants, options, image };
 }
 function extactMetaFields(data: any) {
     const { metafields } = data;
@@ -225,7 +281,7 @@ export async function productUpdate(id: string, shop: string, type: string) {
                 }
             })
             const { product } = resp.data;
-            let {productString, title,body_html,product_type,tags,variants,options,image} = extractProductData(product);
+            let { productString, title, body_html, product_type, tags, variants, options, image } = extractProductData(product);
             const countresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields/count.json`, {
                 headers: {
                     'X-Shopify-Access-Token': token
@@ -234,13 +290,13 @@ export async function productUpdate(id: string, shop: string, type: string) {
             const { count } = countresp.data
             console.log(count)
             let metadata: { [key: string]: any } = {};
-            metadata["title"] = title
-            metadata["body_html"] = body_html
-            metadata["product_type"] = product_type
-            metadata["tags"] = tags
-            metadata["variants"] = variants
-            metadata["options"] = options
-            metadata["image"] = image
+            // metadata["title"] = title
+            // metadata["body_html"] = body_html
+            // metadata["product_type"] = product_type
+            // metadata["tags"] = tags
+            // metadata["variants"] = variants
+            // metadata["options"] = options
+            // metadata["image"] = image
             if (count > 0) {
                 const metaresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields.json`, {
                     headers: {

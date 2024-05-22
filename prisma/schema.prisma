@@ -34,11 +34,12 @@ model ChatbotCustomization {
 }
 
 model Conversation {
-  id            String    @id
-  shopDomain    String
-  startedAt     DateTime  @default(now())
-  customerEmail String?
-  Message       Message[]
+  id                 String               @id
+  shopDomain         String
+  startedAt          DateTime             @default(now())
+  customerEmail      String?
+  Message            Message[]
+  TicketConversation TicketConversation[]
 
   @@index([shopDomain])
 }
@@ -115,4 +116,25 @@ model shopify_installed_shop {
   id          Int    @id @default(autoincrement())
   shop        String @unique
   accessToken String
+}
+
+model Ticket {
+  id                 String               @id
+  shopDomain         String
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime
+  TicketConversation TicketConversation[]
+}
+
+model TicketConversation {
+  id             Int          @id @default(autoincrement())
+  ticketId       String
+  conversationId String
+  shopDomain     String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  Conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  Ticket         Ticket       @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId])
 }

@@ -1,5 +1,5 @@
 import { subscribe } from "diagnostics_channel";
-import { createConv, createMssg, productUpdate, subscribeWebhook, updateProduct } from "./common/function";
+import { createConv, createMssg, productUpdate, subscribeWebhook, updateProduct, updateTicket } from "./common/function";
 import { fetchDocs } from "./fetchDocs";
 import { fetchLinks } from "./fetchLinks";
 import { fetchProducts } from "./fetchProducts";
@@ -23,6 +23,7 @@ async function startWorker() {
         'fetch-links',
         'fetch-docs',
         'fetch-video',
+        'create-ticket',
         'create-conv',
         'create-mssg',
         'product-update',
@@ -66,6 +67,13 @@ async function startWorker() {
                     const {shopDomain} = data;
                     const {type} = data;
                     await productUpdate(id,shopDomain,type)
+                }
+                else if(queue === 'create-ticket'){
+                    const {ticketId} = data;
+                    const {conversationId} = data;
+                    const {shop} = data;
+                    const {time} = data;
+                    await updateTicket(ticketId, conversationId, shop, time)
                 }
                 else if(queue === 'create-conv'){
                     const {id} = data;
