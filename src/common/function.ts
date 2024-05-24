@@ -100,6 +100,18 @@ export async function updateProduct(id: number, shop: string, type: string) {
 
 export async function updateTicket(ticketId: string, conversationId: string, shopDomain: string, time: Date) {
     try {
+        // Check if the conversationId exists in the related table
+        const existingConversation = await client.conversation.findUnique({
+            where: {
+                id: conversationId,
+            },
+        });
+
+        if (!existingConversation) {
+            console.log('Conversation ID does not exist');
+            return;
+        }
+
         const existingTicket = await client.ticket.findUnique({
             where: {
                 id: ticketId,
@@ -182,8 +194,16 @@ function generateUniqueId() {
     const randomStr = Math.random().toString(36).substring(2, 7); // Generate a random string
     return `${timestamp}-${randomStr}`;
 }
+function containsSorryOrError(input: string): boolean {
+    // Convert the input string to lowercase to make the check case-insensitive
+    const lowerCaseInput = input.toLowerCase();
+    return lowerCaseInput.includes('sorry') || lowerCaseInput.includes('error');
+}
 export async function createMssg(convId: string, timestamp: string, sender: string, text: string) {
     try {
+        const checkUnanswered = containsSorryOrError(text);
+
+
         await client.message.create({
             data: {
                 id: generateUniqueId(),
@@ -192,6 +212,7 @@ export async function createMssg(convId: string, timestamp: string, sender: stri
                 senderId: 45454, // You didn't specify how to determine senderId
                 text: text,
                 senderType: sender,
+                unanswered: checkUnanswered
             }
         });
     } catch (error) {
