@@ -1,28 +1,6 @@
 import axios from "axios";
 import openai from "../lib/openai";
-import pc from "../lib/pinecone";
-import { client } from "../lib/prisma";
-import { error } from "console";
-import { val } from "cheerio/lib/api/attributes";
-
-export function extractIndexName(shop: string) {
-    const indexName = shop.replace(/\./g, '-');
-    return indexName
-}
-export async function PineconeIndexcreate(indexName: string) {
-    await pc.createIndex({
-        name: indexName,
-        dimension: 1536,
-        spec: {
-            serverless: {
-                cloud: 'aws',
-                region: 'us-east-1'
-            }
-        },
-        metric: 'cosine',
-        suppressConflicts: true
-    });
-}
+import { addContent, deleteContent } from "../lib/langchain/mongodb";
 
 export function chunkDocument(text: string): string[] {
     const wordsPerChunk = 1000;
@@ -56,41 +34,30 @@ export function chunkDocument(text: string): string[] {
     return chunks;
 }
 
+// export async function createandInsertEmbeddings(chunks: string[], indexName: string, docName: string): Promise<void> {
+//     const index = pc.Index(indexName);
 
-export async function createEmbedding(text: string) {
-    const embeddingResponse = await openai.embeddings.create({
-        model: "text-embedding-ada-002",
-        input: text,
-    });
+//     for (const [i, chunk] of chunks.entries()) {
+//         const embeddingResponse = await openai.embeddings.create({
+//             model: "text-embedding-ada-002",
+//             input: chunk,
+//         });
 
-    const embedding = embeddingResponse.data[0].embedding;
-    return embedding
-}
+//         const embedding = embeddingResponse.data[0].embedding;
 
-export async function createandInsertEmbeddings(chunks: string[], indexName: string, docName: string): Promise<void> {
-    const index = pc.Index(indexName);
-
-    for (const [i, chunk] of chunks.entries()) {
-        const embeddingResponse = await openai.embeddings.create({
-            model: "text-embedding-ada-002",
-            input: chunk,
-        });
-
-        const embedding = embeddingResponse.data[0].embedding;
-
-        await index.upsert(
-            [
-                {
-                    id: `${docName}-${i}`,
-                    values: embedding,
-                    metadata: {
-                        text: chunk,
-                    },
-                },
-            ],
-        );
-    }
-}
+//         await index.upsert(
+//             [
+//                 {
+//                     id: `${docName}-${i}`,
+//                     values: embedding,
+//                     metadata: {
+//                         text: chunk,
+//                     },
+//                 },
+//             ],
+//         );
+//     }
+// }
 
 export async function updateProduct(id: number, shop: string, type: string) {
     if (type === "delete") {
@@ -98,147 +65,94 @@ export async function updateProduct(id: number, shop: string, type: string) {
     }
 }
 
-export async function updateTicket(ticketId: string, conversationId: string, shopDomain: string, time: Date) {
-    try {
-        // Check if the conversationId exists in the related table
-        const existingConversation = await client.conversation.findUnique({
-            where: {
-                id: conversationId,
-            },
-        });
+// export async function updateTicket(ticketId: string, conversationId: string, shopDomain: string, time: Date) {
+//     try {
+//         // Check if the conversationId exists in the related table
+//         const existingConversation = await client.conversation.findUnique({
+//             where: {
+//                 id: conversationId,
+//             },
+//         });
 
-        if (!existingConversation) {
-            console.log('Conversation ID does not exist');
-            return;
-        }
+//         if (!existingConversation) {
+//             console.log('Conversation ID does not exist');
+//             return;
+//         }
 
-        const existingTicket = await client.ticket.findUnique({
-            where: {
-                id: ticketId,
-            },
-            include: {
-                TicketConversation: {
-                    where: {
-                        conversationId: conversationId,
-                    },
-                },
-            },
-        });
+//         const existingTicket = await client.ticket.findUnique({
+//             where: {
+//                 id: ticketId,
+//             },
+//             include: {
+//                 TicketConversation: {
+//                     where: {
+//                         conversationId: conversationId,
+//                     },
+//                 },
+//             },
+//         });
 
-        if (existingTicket) {
-            // Check if the conversation is already linked to the ticket
-            const isConversationLinked = existingTicket.TicketConversation.some(tc => tc.conversationId === conversationId);
+//         if (existingTicket) {
+//             // Check if the conversation is already linked to the ticket
+//             const isConversationLinked = existingTicket.TicketConversation.some(tc => tc.conversationId === conversationId);
 
-            if (!isConversationLinked) {
-                // If the conversation is not linked, create the link
-                await client.ticketConversation.create({
-                    data: {
-                        ticketId: ticketId,
-                        conversationId: conversationId,
-                        shopDomain: shopDomain,
-                        createdAt: time,
-                        updatedAt: time,
-                    },
-                });
-                console.log('Conversation linked to existing ticket');
-            } else {
-                console.log('Conversation is already linked to this ticket');
-            }
-        } else {
-            // If the ticket does not exist, create a new ticket and link the conversation
-            await client.ticket.create({
-                data: {
-                    id: ticketId,
-                    shopDomain: shopDomain,
-                    createdAt: time,
-                    updatedAt: time,
-                    TicketConversation: {
-                        create: {
-                            conversationId: conversationId,
-                            shopDomain: shopDomain,
-                            createdAt: time,
-                            updatedAt: time,
-                        },
-                    },
-                },
-            });
-            console.log('New ticket created and conversation linked');
-        }
+//             if (!isConversationLinked) {
+//                 // If the conversation is not linked, create the link
+//                 await client.ticketConversation.create({
+//                     data: {
+//                         ticketId: ticketId,
+//                         conversationId: conversationId,
+//                         shopDomain: shopDomain,
+//                         createdAt: time,
+//                         updatedAt: time,
+//                     },
+//                 });
+//                 console.log('Conversation linked to existing ticket');
+//             } else {
+//                 console.log('Conversation is already linked to this ticket');
+//             }
+//         } else {
+//             // If the ticket does not exist, create a new ticket and link the conversation
+//             await client.ticket.create({
+//                 data: {
+//                     id: ticketId,
+//                     shopDomain: shopDomain,
+//                     createdAt: time,
+//                     updatedAt: time,
+//                     TicketConversation: {
+//                         create: {
+//                             conversationId: conversationId,
+//                             shopDomain: shopDomain,
+//                             createdAt: time,
+//                             updatedAt: time,
+//                         },
+//                     },
+//                 },
+//             });
+//             console.log('New ticket created and conversation linked');
+//         }
 
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-export async function createConv(shop: string, convId: string, time: Date) {
-    try {
-        let conversation = await client.conversation.findUnique({
-            where: { id: convId }
-        });
-        if (!conversation) {
-            conversation = await client.conversation.create({
-                data: {
-                    id: convId,
-                    shopDomain: shop,
-                    startedAt: time // Assuming 'timestamp' is when the conversation started
-                }
-            });
-        }
-    } catch (error) {
-        console.log(error)
-    }
-}
+//     } catch (error) {
+//         console.log(error);
+//     }
+// }
 
 function generateUniqueId() {
     const timestamp = Date.now().toString(36); // Get the current timestamp and convert it to base36
     const randomStr = Math.random().toString(36).substring(2, 7); // Generate a random string
     return `${timestamp}-${randomStr}`;
 }
-function containsSorryOrError(input: string): boolean {
-    // Convert the input string to lowercase to make the check case-insensitive
-    const lowerCaseInput = input.toLowerCase();
-    return lowerCaseInput.includes('sorry') || lowerCaseInput.includes('error');
-}
-export async function createMssg(convId: string, timestamp: string, sender: string, text: string) {
+
+export async function createMssg(ticketId: string, sender: string, message: string) {
     try {
-        const checkUnanswered = containsSorryOrError(text);
-
-
-        await client.message.create({
-            data: {
-                id: generateUniqueId(),
-                conversationId: convId,
-                timestamp: new Date(timestamp),
-                senderId: 45454, // You didn't specify how to determine senderId
-                text: text,
-                senderType: sender,
-                unanswered: checkUnanswered
-            }
-        });
+        await axios.post(`${process.env.WORKER_WEBHOOK_URL}/save-mssg`, {
+            ticketId,
+            sender,
+            message
+        })
     } catch (error) {
         console.log(error)
     }
-}
-
-async function getToken(shop: string) {
-
-    try {
-        const shopRecord = await client.shopify_installed_shop.findUnique({
-            where: { shop },
-        });
-        if (shopRecord) {
-            return shopRecord.accessToken;
-        } else {
-            console.log(`Shop ${shop} not found.`);
-            return null;
-        }
-
-    } catch (error) {
-        console.error('Error retrieving access token:', error);
-        return null;
-
-    }
-
 }
 
 function extractProductData(product: any) {
@@ -284,44 +198,40 @@ function extactMetaFields(data: any) {
     }
     return keyValuePair;
 }
-export async function productUpdate(id: string, shop: string, type: string) {
+export async function productUpdate(id: string, shop: string, accessToken: string, type: string) {
 
     try {
-        const indexName = extractIndexName(shop);
-        const index = pc.index(indexName)
         if (type === "delete") {
-            await index._deleteOne(id)
-            console.log(`id ${id} deleted successfull`)
+            await deleteContent(id)
         }
         else {
-            const token = await getToken(shop)
-            console.log(token)
             const resp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}.json`, {
                 headers: {
-                    'X-Shopify-Access-Token': token
+                    'X-Shopify-Access-Token': accessToken
                 }
             })
             const { product } = resp.data;
             let { productString, title, body_html, product_type, tags, variants, options, image } = extractProductData(product);
             const countresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields/count.json`, {
                 headers: {
-                    'X-Shopify-Access-Token': token
+                    'X-Shopify-Access-Token': accessToken
                 }
             })
             const { count } = countresp.data
             console.log(count)
             let metadata: { [key: string]: any } = {};
-            // metadata["title"] = title
-            // metadata["body_html"] = body_html
-            // metadata["product_type"] = product_type
-            // metadata["tags"] = tags
-            // metadata["variants"] = variants
-            // metadata["options"] = options
-            // metadata["image"] = image
+            metadata["title"] = title
+            metadata["body_html"] = body_html
+            metadata["product_type"] = product_type
+            metadata["tags"] = tags
+            metadata["variants"] = variants
+            metadata["options"] = options
+            metadata["image"] = image
+            metadata["yugaa_shop"] = shop
             if (count > 0) {
                 const metaresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields.json`, {
                     headers: {
-                        'X-Shopify-Access-Token': token
+                        'X-Shopify-Access-Token': accessToken
                     }
                 })
                 const data = extactMetaFields(metaresp.data)
@@ -330,21 +240,8 @@ export async function productUpdate(id: string, shop: string, type: string) {
                     productString += (`${key} : ${value}`)
 
                 })
-
             }
-            metadata["text"] = productString;
-
-
-
-            const vector = await createEmbedding(productString);
-            await index.upsert([
-                {
-                    "id": String(id),
-                    "values": vector,
-                    "metadata": metadata
-                }
-            ])
-
+            await addContent(id, shop, productString, metadata)
         }
 
     } catch (e) {
@@ -353,50 +250,45 @@ export async function productUpdate(id: string, shop: string, type: string) {
 
 }
 
-const webhookurl = "https://api.yugaa.tech/webhooks/"
+const webhookurl = process.env.SHOPIFY_WEBHOOK_URL
 
 export async function subscribeWebhook(shop: string, accessToken: string) {
     const webhooks = [
         {
-            address: `${webhookurl}app/uninstalled`,
+            address: `${webhookurl}/app/uninstalled`,
             topic: 'app/uninstalled',
             format: 'json',
         },
         {
-            address: `${webhookurl}app_subscriptions/update`,
+            address: `${webhookurl}/app_subscriptions/update`,
             topic: 'app_subscriptions/update',
             format: 'json',
         },
         {
-            address: `${webhookurl}products/create`,
+            address: `${webhookurl}/products/create`,
             topic: 'products/create',
             format: 'json',
         },
         {
-            address: `${webhookurl}products/delete`,
+            address: `${webhookurl}/products/delete`,
             topic: 'products/delete',
             format: 'json',
         },
         {
-            address: `${webhookurl}products/update`,
+            address: `${webhookurl}/products/update`,
             topic: 'products/update',
             format: 'json',
         },
     ];
     for (const webhookData of webhooks) {
-        try {
-            await createWebhook(shop, accessToken, webhookData);
-            await delay(1000); // Delay for 1 second (1000 milliseconds)
-        } catch (error) {
-            console.error('Error creating webhook:', error);
-        }
+        await createWebhook(shop, accessToken, webhookData);
+        await delay(2000); // Delay for 1 second (1000 milliseconds)
     }
-
-
 }
-
-
 async function createWebhook(shop: any, accessToken: any, webhookData: any) {
+    console.log(shop)
+    console.log(accessToken)
+    console.log(webhookData)
     try {
         const response = await axios.post(
             `https://${shop}/admin/api/2024-01/webhooks.json`,
@@ -408,12 +300,11 @@ async function createWebhook(shop: any, accessToken: any, webhookData: any) {
                 },
             }
         );
-
         console.log('Webhook created:', response.data);
         await saveWebhookDetails(response.data, shop)
-        // Handle the successful webhook creation
     } catch (error) {
-        console.error('Error creating webhook:');
+        console.error(`Error creating webhook: ${error}`);
+        throw new Error('could not create webhook ')
         // Handle the error
     }
 }
@@ -423,52 +314,51 @@ function delay(ms: any) {
 }
 
 export async function saveWebhookDetails(webhookResponse: any, shopDomain: any) {
+    const webhook = webhookResponse.webhook;
+    console.log(webhook)
     try {
-        const webhook = webhookResponse.webhook;
-        console.log(webhook)
+        const createdWebhook = await axios.post(`${process.env.WORKER_WEBHOOK_URL}/save-webhook`, {
+            id: String(webhook.id),
+            address: webhook.address,
+            topic: webhook.topic,
+            createdAt: webhook.created_at,
+            updatedAt: webhook.updated_at,
+            shopDomain: shopDomain,
+        }
+        );
+        console.log('Webhook details send:', createdWebhook.data);
 
-        const createdWebhook = await client.registeredWebhooks.create({
-            data: {
-                id: String(webhook.id),
-                address: webhook.address,
-                topic: webhook.topic,
-                created_at: webhook.created_at,
-                updated_at: webhook.updated_at,
-                shopDomain: shopDomain,
-            },
-        });
-        console.log('Webhook details saved:', createdWebhook);
-    } catch (error) {
-        console.error('Error saving webhook details:', error);
-        // throw error;
-    }
-}
-
-export async function deleteRecordsWithPrefix(indexName: string, prefix: string) {
-    try {
-        const index = pc.index(indexName);
-        let paginationToken: string | undefined = undefined;
-        let pageList = await index.listPaginated({ prefix });
-        let vectorIds = pageList?.vectors?.map((vector) => vector.id);
-        if (!vectorIds || !vectorIds.length) {
-            return;
-        }
-        if (vectorIds?.length > 0) {
-            await index.deleteMany(vectorIds);
-        }
-        paginationToken = pageList.pagination?.next;
-        while (paginationToken) {
-            pageList = await index.listPaginated({ prefix, paginationToken });
-            vectorIds = pageList?.vectors?.map((vector) => vector.id);
-            if (!vectorIds || !vectorIds.length) {
-                return;
-            }
-            if (vectorIds.length > 0) {
-                await index.deleteMany(vectorIds);
-            }
-            paginationToken = pageList.pagination?.next;
-        }
     } catch (error) {
         console.log(error)
+        console.log('could not save wwebhook details')
     }
 }
+
+// export async function deleteRecordsWithPrefix(indexName: string, prefix: string) {
+//     try {
+//         const index = pc.index(indexName);
+//         let paginationToken: string | undefined = undefined;
+//         let pageList = await index.listPaginated({ prefix });
+//         let vectorIds = pageList?.vectors?.map((vector) => vector.id);
+//         if (!vectorIds || !vectorIds.length) {
+//             return;
+//         }
+//         if (vectorIds?.length > 0) {
+//             await index.deleteMany(vectorIds);
+//         }
+//         paginationToken = pageList.pagination?.next;
+//         while (paginationToken) {
+//             pageList = await index.listPaginated({ prefix, paginationToken });
+//             vectorIds = pageList?.vectors?.map((vector) => vector.id);
+//             if (!vectorIds || !vectorIds.length) {
+//                 return;
+//             }
+//             if (vectorIds.length > 0) {
+//                 await index.deleteMany(vectorIds);
+//             }
+//             paginationToken = pageList.pagination?.next;
+//         }
+//     } catch (error) {
+//         console.log(error)
+//     }
+// }

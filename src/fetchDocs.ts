@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { chunkDocument, createandInsertEmbeddings, deleteRecordsWithPrefix, extractIndexName } from './common/function';
+import { chunkDocument,  } from './common/function';
 import { Buffer } from 'buffer';
 import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
@@ -18,10 +18,10 @@ const downloadFile = async (url: string): Promise<Buffer> => {
 
 export async function fetchDocs(filename: string, url: string, shop: string, type: string) {
     let text = '';
-    const indexName = extractIndexName(shop)
+    // const indexName = extractIndexName(shop)
     try {
         if (type === "delete") {
-            await deleteRecordsWithPrefix(indexName, filename)
+            // await deleteRecordsWithPrefix(indexName, filename)
         }
         else {
             const fileType = getFileType(url);
@@ -42,7 +42,7 @@ export async function fetchDocs(filename: string, url: string, shop: string, typ
                     throw new Error('Unsupported file type');
             }
             const chunk = chunkDocument(text)
-            await createandInsertEmbeddings(chunk, indexName, filename)
+            // await createandInsertEmbeddings(chunk, indexName, filename)
         }
     } catch (error) {
         console.log(error)
