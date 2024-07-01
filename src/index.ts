@@ -24,7 +24,7 @@ async function startWorker() {
         console.log("Worker connected to Pub/Sub.");
         const subscriptions = [
             // { name: 'email-topic-sub', handler: handleSendEmail },
-            // { name: 'initialize-shop', handler: handleinitializeShop },
+            { name: 'initialize-shop', handler: handleinitializeShop },
             { name: 'store-mssg-sub', handler: handleCreateMssg },
             { name: 'fetch-products', handler: handlefetchProduct },
             { name: 'update-product-with-id-sub', handler: handleUpdateProductwithID },
