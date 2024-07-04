@@ -165,6 +165,7 @@ function extractProductData(product: any) {
         variants,
         options,
         image,
+        handle
     } = product;
 
     const productString = `Title: ${title}
@@ -185,7 +186,7 @@ function extractProductData(product: any) {
             : 'No Image'
         }`;
 
-    return { productString, title, body_html, product_type, tags, variants, options, image };
+    return { productString, title, body_html, product_type, tags, variants, options, image, handle };
 }
 function extactMetaFields(data: any) {
     const { metafields } = data;
@@ -211,7 +212,7 @@ export async function productUpdate(id: string, shop: string, accessToken: strin
                 }
             })
             const { product } = resp.data;
-            let { productString, title, body_html, product_type, tags, variants, options, image } = extractProductData(product);
+            let {handle, productString, title, body_html, product_type, tags, variants, options, image } = extractProductData(product);
             const countresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields/count.json`, {
                 headers: {
                     'X-Shopify-Access-Token': accessToken
@@ -228,6 +229,8 @@ export async function productUpdate(id: string, shop: string, accessToken: strin
             metadata["options"] = options
             metadata["image"] = image
             metadata["yugaa_shop"] = shop
+            metadata["handle"] = handle
+            metadata["yugaa_type"] = "product"
             if (count > 0) {
                 const metaresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields.json`, {
                     headers: {
