@@ -25,7 +25,7 @@ async function startWorker() {
         const subscriptions = [
             // { name: 'email-topic-sub', handler: handleSendEmail },
             { name: 'initialize-shop', handler: handleinitializeShop },
-            { name: 'store-mssg-sub', handler: handleCreateMssg },
+            // { name: 'store-mssg-sub', handler: handleCreateMssg },
             { name: 'fetch-products', handler: handlefetchProduct },
             { name: 'update-product-with-id-sub', handler: handleUpdateProductwithID },
         ];

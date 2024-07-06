@@ -222,6 +222,7 @@ export async function productUpdate(id: string, shop: string, accessToken: strin
             console.log(count)
             let metadata: { [key: string]: any } = {};
             metadata["title"] = title
+            metadata["id"] = id
             metadata["body_html"] = body_html
             metadata["product_type"] = product_type
             metadata["tags"] = tags
@@ -292,7 +293,25 @@ async function createWebhook(shop: any, accessToken: any, webhookData: any) {
     console.log(shop)
     console.log(accessToken)
     console.log(webhookData)
+
     try {
+        const topic = webhookData.topic;
+        const res = await axios.get(`https://${shop}/admin/api/2024-01/webhooks.json`,{
+            headers: {
+                'X-Shopify-Access-Token': accessToken,
+            },
+        })
+        const {data} = res;
+        const {webhooks} = data;
+        let len = webhooks.length;
+        for(let i=0;i<len;i++){
+            const count = webhooks[i];
+            const {topic} = count;
+            if(webhookData.topic === topic){
+                console.log("webhook already found")
+                return;
+            }
+        }
         const response = await axios.post(
             `https://${shop}/admin/api/2024-01/webhooks.json`,
             { webhook: webhookData },
