@@ -143,12 +143,14 @@ function generateUniqueId() {
     return `${timestamp}-${randomStr}`;
 }
 
-export async function createMssg(ticketId: string, sender: string, message: string) {
+export async function createMssg(ticketId: string, sender: string, message: string, timestamp: any) {
+    console.log(timestamp)
     try {
         await axios.post(`${process.env.WORKER_WEBHOOK_URL}/save-mssg`, {
             ticketId,
             sender,
-            message
+            message,
+            timestamp
         })
     } catch (error) {
         console.log(error)
@@ -212,7 +214,7 @@ export async function productUpdate(id: string, shop: string, accessToken: strin
                 }
             })
             const { product } = resp.data;
-            let {handle, productString, title, body_html, product_type, tags, variants, options, image } = extractProductData(product);
+            let { handle, productString, title, body_html, product_type, tags, variants, options, image } = extractProductData(product);
             const countresp = await axios.get(`https://${shop}/admin/api/2024-04/products/${id}/metafields/count.json`, {
                 headers: {
                     'X-Shopify-Access-Token': accessToken
@@ -296,18 +298,18 @@ async function createWebhook(shop: any, accessToken: any, webhookData: any) {
 
     try {
         const topic = webhookData.topic;
-        const res = await axios.get(`https://${shop}/admin/api/2024-01/webhooks.json`,{
+        const res = await axios.get(`https://${shop}/admin/api/2024-01/webhooks.json`, {
             headers: {
                 'X-Shopify-Access-Token': accessToken,
             },
         })
-        const {data} = res;
-        const {webhooks} = data;
+        const { data } = res;
+        const { webhooks } = data;
         let len = webhooks.length;
-        for(let i=0;i<len;i++){
+        for (let i = 0; i < len; i++) {
             const count = webhooks[i];
-            const {topic} = count;
-            if(webhookData.topic === topic){
+            const { topic } = count;
+            if (webhookData.topic === topic) {
                 console.log("webhook already found")
                 return;
             }

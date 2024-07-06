@@ -25,7 +25,7 @@ async function startWorker() {
         const subscriptions = [
             // { name: 'email-topic-sub', handler: handleSendEmail },
             { name: 'initialize-shop', handler: handleinitializeShop },
-            // { name: 'store-mssg-sub', handler: handleCreateMssg },
+            { name: 'store-mssg-sub', handler: handleCreateMssg },
             { name: 'fetch-products', handler: handlefetchProduct },
             { name: 'update-product-with-id-sub', handler: handleUpdateProductwithID },
         ];
@@ -174,8 +174,8 @@ async function handleCreateConv(data: any) {
 }
 
 async function handleCreateMssg(data: any) {
-    const { ticketId, sender, message } = data;
-    await createMssg(ticketId, sender, message);
+    const { ticketId, sender, message , timestamp } = data;
+    await createMssg(ticketId, sender, message, timestamp);
 }
 
 async function handleProductUpdate(data: any) {
